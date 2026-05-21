@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>定期テスト対策アプリ</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Sans', sans-serif;
+    background: #fff0f5;
+    min-height: 100vh;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── ホーム ── */
+  #home {
+    background: linear-gradient(160deg, #fce4ec 0%, #f3e5f5 40%, #e8eaf6 100%);
+    align-items: center; padding: 48px 20px 40px; position: relative; overflow: hidden;
+  }
+  #home::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(#f48fb1 1px, transparent 1px);
+    background-size: 28px 28px; opacity: 0.18; pointer-events: none;
+  }
+  .home-mascot { font-size: 3.2rem; margin-bottom: 10px; filter: drop-shadow(0 4px 8px rgba(236,64,122,.2)); }
+  .home-title {
+    font-size: 1.55rem; font-weight: 800; letter-spacing: 1px;
+    background: linear-gradient(135deg, #e91e8c, #9c27b0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+  .home-sub { font-size: 0.82rem; color: #ad5f8a; margin-bottom: 36px; }
+  .subject-cards { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; position: relative; z-index: 1; }
+  .subject-card {
+    border-radius: 22px; padding: 20px 18px; cursor: pointer;
+    transition: transform .18s, box-shadow .18s;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12); position: relative; overflow: hidden;
+  }
+  .subject-card::after {
+    content: '✦'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 1.1rem; opacity: 0.35; color: #fff;
+  }
+  .subject-card:hover { transform: translateY(-3px) scale(1.015); box-shadow: 0 12px 28px rgba(0,0,0,.18); }
+  .subject-card .icon { font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
+  .subject-card .info h2 { font-size: 1.2rem; font-weight: 800; color: #fff; }
+  .subject-card .info p  { font-size: 0.75rem; color: rgba(255,255,255,.88); margin-top: 2px; }
+  .card-chiri   { background: linear-gradient(135deg, #81d4fa, #4fc3f7, #29b6f6); }
+  .card-rekishi { background: linear-gradient(135deg, #f48fb1, #f06292, #ec407a); }
+  .card-seibutsu{ background: linear-gradient(135deg, #a5d6a7, #66bb6a, #43a047); }
+  .home-note { margin-top: 28px; font-size: 0.73rem; color: #b388a0; position: relative; z-index: 1; }
+
+  /* ── 共通 ── */
+  .back-btn {
+    align-self: flex-start; background: none; border: none;
+    color: #c2739a; font-size: 0.88rem; cursor: pointer;
+    padding: 4px 0; margin-bottom: 20px; font-weight: 700; font-family: inherit;
+  }
+  .back-btn:hover { color: #e91e8c; }
+
+  /* ── モード選択 ── */
+  #modeSelect {
+    background: linear-gradient(160deg, #fff0f5 0%, #f8f0ff 100%);
+    align-items: center; padding: 36px 20px;
+  }
+  .mode-subject-label { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; color: #5d3a5a; }
+  .mode-subject-label span { border-radius: 99px; padding: 3px 14px; color: #fff; font-size: 0.9rem; }
+  .mode-desc { font-size: 0.8rem; color: #a06080; margin-bottom: 28px; text-align: center; max-width: 320px; }
+  .mode-cards { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; }
+  .mode-card {
+    background: #fff; border-radius: 20px; padding: 20px 18px; cursor: pointer;
+    border: 2.5px solid #fce4ec;
+    transition: border-color .18s, box-shadow .18s, transform .18s;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 4px 14px rgba(236,64,122,.08);
+  }
+  .mode-card:hover { border-color: #f48fb1; box-shadow: 0 6px 20px rgba(236,64,122,.18); transform: translateY(-2px); }
+  .mode-card .mode-icon { font-size: 1.9rem; }
+  .mode-card .mode-info h3 { font-size: 1.05rem; font-weight: 800; color: #5d3a5a; }
+  .mode-card .mode-info p  { font-size: 0.76rem; color: #a06080; margin-top: 3px; }
+  .stats-bar {
+    width: 100%; max-width: 360px; background: #fff; border-radius: 16px;
+    padding: 14px 18px; margin-top: 18px;
+    box-shadow: 0 4px 14px rgba(236,64,122,.08); border: 2px solid #fce4ec;
+  }
+  .stats-bar h4 { font-size: 0.78rem; color: #c2739a; margin-bottom: 8px; font-weight: 700; }
+  .stats-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: #7a4a6a; }
+  .stats-val { font-weight: 800; color: #e91e8c; }
+
+  /* ── クイズヘッダー ── */
+  .quiz-header {
+    padding: 14px 18px 12px; display: flex; align-items: center; gap: 12px;
+    background: #fff; box-shadow: 0 2px 10px rgba(236,64,122,.1);
+  }
+  .quiz-header .back-btn { margin: 0; }
+  .quiz-progress-wrap { flex: 1; }
+  .quiz-progress-label { font-size: 0.72rem; color: #c2739a; margin-bottom: 4px; font-weight: 700; }
+  .quiz-progress-bar { height: 8px; background: #fce4ec; border-radius: 99px; overflow: hidden; }
+  .quiz-progress-fill { height: 100%; border-radius: 99px; transition: width .35s ease; }
+  .quiz-count { font-size: 0.78rem; color: #c2739a; font-weight: 800; white-space: nowrap; }
+
+  /* ── 4択クイズ ── */
+  #quiz { background: linear-gradient(160deg, #fff0f5 0%, #f8f0ff 100%); }
+  .quiz-body {
+    flex: 1; padding: 18px 16px; display: flex; flex-direction: column; gap: 14px;
+    max-width: 540px; margin: 0 auto; width: 100%;
+  }
+  .question-card {
+    background: #fff; border-radius: 20px; padding: 22px 18px;
+    box-shadow: 0 4px 16px rgba(236,64,122,.1); border: 2px solid #fce4ec;
+  }
+  .question-num { font-size: 0.72rem; font-weight: 800; margin-bottom: 10px; }
+  .question-text { font-size: 1.02rem; line-height: 1.75; font-weight: 500; color: #3d1a3a; }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice-btn {
+    background: #fff; border: 2.5px solid #fce4ec; border-radius: 16px;
+    padding: 13px 15px; text-align: left; font-size: 0.93rem;
+    cursor: pointer; transition: border-color .15s, background .15s, transform .1s;
+    line-height: 1.55; color: #5d3a5a; font-family: inherit; font-weight: 500;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: #f48fb1; background: #fff5f8; transform: translateX(3px); }
+  .choice-btn.correct { border-color: #66bb6a; background: #f1f8e9; color: #2e7d32; }
+  .choice-btn.wrong   { border-color: #ef9a9a; background: #fff5f5; color: #c62828; }
+  .choice-btn.show-correct { border-color: #66bb6a; background: #f1f8e9; color: #2e7d32; }
+  .choice-btn:disabled { cursor: default; }
+  .explanation-box {
+    background: linear-gradient(135deg, #fce4ec, #f3e5f5);
+    border-left: 4px solid #f48fb1; border-radius: 0 16px 16px 0;
+    padding: 14px 16px; font-size: 0.86rem; line-height: 1.65; color: #6a1a5a; display: none;
+  }
+  .explanation-box.show { display: block; }
+  .next-btn {
+    background: linear-gradient(135deg, #f48fb1, #ce93d8);
+    color: #fff; border: none; border-radius: 99px; padding: 14px;
+    font-size: 0.98rem; font-weight: 800; cursor: pointer;
+    transition: opacity .15s, transform .15s; letter-spacing: 0.5px;
+    font-family: inherit; box-shadow: 0 4px 14px rgba(244,143,177,.4);
+    display: none;
+  }
+  .next-btn:hover { opacity: .88; transform: translateY(-1px); }
+  .next-btn.show { display: block; }
+
+  /* ── フラッシュカード ── */
+  #flash { background: linear-gradient(160deg, #fff0f5 0%, #f8f0ff 100%); }
+  .flash-body {
+    flex: 1; padding: 18px 16px; display: flex; flex-direction: column; gap: 14px;
+    max-width: 540px; margin: 0 auto; width: 100%;
+  }
+  .flash-card {
+    background: #fff; border-radius: 24px; padding: 32px 22px;
+    box-shadow: 0 6px 20px rgba(236,64,122,.12); border: 2.5px solid #fce4ec;
+    min-height: 230px; display: flex; flex-direction: column; justify-content: center;
+    cursor: pointer; transition: transform .18s, box-shadow .18s; user-select: none;
+    position: relative; overflow: hidden;
+  }
+  .flash-card::before {
+    content: '✿'; position: absolute; top: 12px; right: 16px;
+    font-size: 1.4rem; opacity: 0.12; color: #e91e8c;
+  }
+  .flash-card:hover { transform: scale(1.015); box-shadow: 0 10px 28px rgba(236,64,122,.18); }
+  .flash-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 14px; }
+  .flash-q { font-size: 1.08rem; font-weight: 500; line-height: 1.75; color: #3d1a3a; }
+  .flash-a { font-size: 1.12rem; font-weight: 800; line-height: 1.6; color: #c2185b; display: none; }
+  .flash-exp { font-size: 0.83rem; color: #a06080; line-height: 1.65; margin-top: 12px; display: none; }
+  .flash-tap { font-size: 0.78rem; color: #d4a0b8; text-align: center; margin-top: 10px; }
+  .flash-actions { display: none; flex-direction: row; gap: 12px; }
+  .flash-actions.show { display: flex; }
+  .flash-btn {
+    flex: 1; padding: 14px; border: none; border-radius: 16px;
+    font-size: 0.93rem; font-weight: 800; cursor: pointer;
+    transition: opacity .15s, transform .15s; font-family: inherit;
+  }
+  .flash-btn.ok { background: linear-gradient(135deg, #c8e6c9, #a5d6a7); color: #2e7d32; }
+  .flash-btn.ng { background: linear-gradient(135deg, #ffcdd2, #ef9a9a); color: #c62828; }
+  .flash-btn:hover { opacity: .85; transform: translateY(-1px); }
+
+  /* ── 結果 ── */
+  #result {
+    background: linear-gradient(160deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%);
+    align-items: center; padding: 40px 20px; position: relative; overflow: hidden;
+  }
+  #result::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(#f48fb1 1px, transparent 1px);
+    background-size: 24px 24px; opacity: 0.12; pointer-events: none;
+  }
+  .result-card {
+    background: #fff; border-radius: 24px; padding: 30px 22px;
+    box-shadow: 0 8px 28px rgba(236,64,122,.15);
+    width: 100%; max-width: 380px; text-align: center;
+    border: 2px solid #fce4ec; position: relative; z-index: 1;
+  }
+  .result-emoji { font-size: 3.6rem; margin-bottom: 10px; }
+  .result-score {
+    font-size: 2.6rem; font-weight: 800; margin-bottom: 2px;
+    background: linear-gradient(135deg, #e91e8c, #9c27b0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .result-label { font-size: 0.83rem; color: #a06080; margin-bottom: 22px; }
+  .result-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; text-align: left; }
+  .result-bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: #7a4a6a; }
+  .result-bar-row label { width: 56px; }
+  .result-bar-bg { flex: 1; height: 10px; background: #fce4ec; border-radius: 99px; overflow: hidden; }
+  .result-bar-fill { height: 100%; border-radius: 99px; }
+  .result-bar-row .val { width: 34px; text-align: right; font-weight: 800; color: #5d3a5a; }
+  .result-btns { display: flex; flex-direction: column; gap: 10px; }
+  .result-btn {
+    padding: 13px; border: none; border-radius: 99px;
+    font-size: 0.93rem; font-weight: 800; cursor: pointer;
+    font-family: inherit; transition: opacity .15s, transform .15s;
+  }
+  .result-btn.primary {
+    background: linear-gradient(135deg, #f48fb1, #ce93d8);
+    color: #fff; box-shadow: 0 4px 14px rgba(244,143,177,.4);
+  }
+  .result-btn.secondary { background: #fce4ec; color: #c2739a; }
+  .result-btn:hover { opacity: .87; transform: translateY(-1px); }
+  .review-list { width: 100%; max-width: 380px; margin-top: 18px; position: relative; z-index: 1; }
+  .review-item {
+    background: #fff; border-radius: 14px; padding: 13px 15px;
+    margin-bottom: 10px; font-size: 0.83rem; border-left: 4px solid #f48fb1;
+    box-shadow: 0 2px 8px rgba(236,64,122,.08);
+  }
+  .review-item .ri-q { font-weight: 500; margin-bottom: 4px; color: #5d3a5a; }
+  .review-item .ri-a { color: #43a047; font-weight: 800; }
+
+  .tag {
+    display: inline-block; border-radius: 99px; padding: 2px 12px;
+    font-size: 0.72rem; color: #fff; margin-right: 6px; font-weight: 700;
+  }
+  .tag-chiri    { background: linear-gradient(135deg, #4fc3f7, #29b6f6); }
+  .tag-rekishi  { background: linear-gradient(135deg, #f48fb1, #ec407a); }
+  .tag-seibutsu { background: linear-gradient(135deg, #81c784, #43a047); }
+</style>
+</head>
+<body>
+
+<!-- ホーム -->
+<div id="home" class="screen active">
+  <p class="home-mascot">🌸</p>
+  <p class="home-title">定期テスト対策</p>
+  <p class="home-sub">✨ 偏差値60レベル ｜ 地理 / 歴史 / 生物 ✨</p>
+  <div class="subject-cards">
+    <div class="subject-card card-chiri" onclick="openMode('chiri')">
+      <div class="icon">🌍</div>
+      <div class="info">
+        <h2>地理</h2>
+        <p>地図投影法・時差・国際機関・領土問題 ほか</p>
+      </div>
+    </div>
+    <div class="subject-card card-rekishi" onclick="openMode('rekishi')">
+      <div class="icon">📜</div>
+      <div class="info">
+        <h2>歴史</h2>
+        <p>江戸時代・市民革命・フランス革命・清 ほか</p>
+      </div>
+    </div>
+    <div class="subject-card card-seibutsu" onclick="openMode('seibutsu')">
+      <div class="icon">🔬</div>
+      <div class="info">
+        <h2>生物</h2>
+        <p>顕微鏡・細胞小器官・ATP・光合成・細胞呼吸</p>
+      </div>
+    </div>
+  </div>
+  <p class="home-note">🌷 プリント・教科書の内容から出題</p>
+</div>
+
+<!-- モード選択 -->
+<div id="modeSelect" class="screen">
+  <button class="back-btn" onclick="showScreen('home')">← 科目選択に戻る</button>
+  <p class="mode-subject-label" id="modeSubjectLabel"></p>
+  <p class="mode-desc" id="modeDesc"></p>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="startQuiz()">
+      <div class="mode-icon">📝</div>
+      <div class="mode-info">
+        <h3>4択クイズ</h3>
+        <p>4つの選択肢から正解を選ぶ。解説付き。</p>
+      </div>
+    </div>
+    <div class="mode-card" onclick="startFlash()">
+      <div class="mode-icon">🃏</div>
+      <div class="mode-info">
+        <h3>一問一答フラッシュカード</h3>
+        <p>カードをタップして答えを確認。自己採点方式。</p>
+      </div>
+    </div>
+  </div>
+  <div class="stats-bar" id="statsBar">
+    <h4>🌸 この科目の記録</h4>
+    <div class="stats-row">
+      <span>4択 最高スコア</span><span class="stats-val" id="statBest">—</span>
+    </div>
+    <div class="stats-row" style="margin-top:4px">
+      <span>一問一答 正答率</span><span class="stats-val" id="statFlash">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- 4択クイズ -->
+<div id="quiz" class="screen">
+  <div class="quiz-header">
+    <button class="back-btn" onclick="confirmBack()">← 戻る</button>
+    <div class="quiz-progress-wrap">
+      <p class="quiz-progress-label" id="quizProgressLabel"></p>
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill"></div></div>
+    </div>
+    <span class="quiz-count" id="quizCount"></span>
+  </div>
+  <div class="quiz-body">
+    <div class="question-card">
+      <p class="question-num" id="questionNum"></p>
+      <p class="question-text" id="questionText"></p>
+    </div>
+    <div class="choices" id="choices"></div>
+    <div class="explanation-box" id="explanationBox"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">つぎの問題へ ✦</button>
+  </div>
+</div>
+
+<!-- フラッシュカード -->
+<div id="flash" class="screen">
+  <div class="quiz-header">
+    <button class="back-btn" onclick="confirmBack()">← 戻る</button>
+    <div class="quiz-progress-wrap">
+      <p class="quiz-progress-label" id="flashProgressLabel"></p>
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="flashProgressFill"></div></div>
+    </div>
+    <span class="quiz-count" id="flashCount"></span>
+  </div>
+  <div class="flash-body">
+    <div class="flash-card" id="flashCard" onclick="revealFlash()">
+      <p class="flash-label" id="flashLabel">❓ 問題</p>
+      <p class="flash-q" id="flashQ"></p>
+      <p class="flash-a" id="flashA"></p>
+      <p class="flash-exp" id="flashExp"></p>
+    </div>
+    <p class="flash-tap" id="flashTap">🌸 カードをタップして答えを表示</p>
+    <div class="flash-actions" id="flashActions">
+      <button class="flash-btn ok" onclick="flashAnswer(true)">✅ 正解！</button>
+      <button class="flash-btn ng" onclick="flashAnswer(false)">❌ 不正解</button>
+    </div>
+  </div>
+</div>
+
+<!-- 結果 -->
+<div id="result" class="screen">
+  <div class="result-card">
+    <p class="result-emoji" id="resultEmoji"></p>
+    <p class="result-score" id="resultScore"></p>
+    <p class="result-label" id="resultLabel"></p>
+    <div class="result-bars" id="resultBars"></div>
+    <div class="result-btns">
+      <button class="result-btn primary" onclick="retry()">🌸 もう一度挑戦！</button>
+      <button class="result-btn secondary" onclick="showScreen('modeSelect')">モード選択に戻る</button>
+      <button class="result-btn secondary" onclick="showScreen('home')">科目選択に戻る</button>
+    </div>
+  </div>
+  <div class="review-list" id="reviewList"></div>
+</div>
+
+<script>
+const DB = {
+  chiri: {
+    label: '地理', color: '#29b6f6', tagClass: 'tag-chiri',
+    desc: '地図投影法・時差・領土問題・国際機関・貿易協定',
+    quiz: [
+      { q:"メルカトル図法の特徴として正しいものはどれか？", choices:["面積が正確（正積図法）","角度が正確で等角航路が直線になる","中心からの距離と方位が正確","すべての要素が正確に表される"], answer:1, exp:"メルカトル図法は正角図法で、緯線・経線が直角に交わり等角航路が直線で描かれる。大航海時代の航海に使われた。高緯度ほど面積が拡大するのが欠点。" },
+      { q:"サンソン図法の特徴として正しいものはどれか？", choices:["角度が正確で航海に利用される","正積図法で緯線ごとの長さの比が等しい","中心からの方位が正確","面積と角度の両方が正確"], answer:1, exp:"サンソン図法は正積図法。低緯度の中央経線付近では正確だが高緯度でひずみが大きい。「サンソンのサはサインカーブのサ」。" },
+      { q:"日本の標準時子午線はどれか？", choices:["東経120度","東経130度","東経135度","東経140度"], answer:2, exp:"日本の標準時子午線は東経135度（兵庫県明石市付近）。グリニッジ標準時より9時間進んでいる（135÷15＝9）。" },
+      { q:"ASEANが設立された年はいつか？", choices:["1945年","1957年","1967年","1993年"], answer:2, exp:"ASEAN（東南アジア諸国連合）は東南アジア諸国の経済開発・域内の平和安定を目指し1967年に設立された。" },
+      { q:"北方領土を実効支配している国はどこか？", choices:["中国","韓国","ロシア","アメリカ"], answer:2, exp:"北方領土（択捉島・国後島・色丹島・歯舞群島）はロシアが不法占拠。1951年サンフランシスコ平和条約後も返還されていない。" },
+      { q:"WTO（世界貿易機関）の主な役割はどれか？", choices:["軍事的紛争の解決","世界貿易の自由化推進とルールの遵守","先進国のみの経済協力","国際通貨・為替の安定"], answer:1, exp:"WTOはGATTを引き継いで発足。世界貿易の自由化を推進するルール作りと、紛争解決能力の強化が役割。" },
+      { q:"竹島を実効支配している国はどこか？", choices:["日本","韓国","中国","ロシア"], answer:1, exp:"竹島は17世紀半ばに日本が領有権を確立し、1905年に島根県に編入。しかし1952年以降、韓国が実効支配している。" },
+      { q:"排他的経済水域（EEZ）の範囲はどこまでか？", choices:["基線から12海里","基線から24海里","基線から200海里","公海から200海里"], answer:2, exp:"EEZは国連海洋法条約に基づき、沿岸国の基線から200海里以内。水産・鉱物資源の利用が独占的に認められる。外国船の航行は自由。" },
+      { q:"GIS（地理情報システム）の活用例として最もあてはまらないものはどれか？", choices:["ハザードマップの作成","都市部の交通渋滞の緩和","企業のマーケティング戦略","外国語の翻訳支援"], answer:3, exp:"GISは位置情報を持つデータを使って精度の高い判断を可能にする技術。ハザードマップ・交通渋滞緩和・マーケティング等に活用される。翻訳はGISとは無関係。" },
+      { q:"FTA（自由貿易協定）の主な目的はどれか？", choices:["軍事同盟の強化","特定の国や地域間での関税を相互に撤廃し貿易を活発化する","共通通貨の導入","移民の制限"], answer:1, exp:"FTAはFree Trade Agreementの略。特定の国・地域間で関税を相互に撤廃・削減し、貿易を活発にすることが目的。" },
+      { q:"正距方位図法の特徴として正しいものはどれか？", choices:["面積がすべて正確","角度が正確で航海に使われる","地図の中心からの距離と方位が正確","高緯度のひずみが少ない"], answer:2, exp:"正距方位図法は地図の中心から任意の地点までの距離と方位が正確。中心から遠いほど形・面積のひずみが大きくなる。" },
+      { q:"USMCA（旧NAFTA）に加盟している国の正しい組み合わせはどれか？", choices:["アメリカ・カナダ・ブラジル","アメリカ・カナダ・メキシコ","アメリカ・メキシコ・コロンビア","アメリカ・カナダ・キューバ"], answer:1, exp:"USMCAはNAFTAに替わるアメリカ・メキシコ・カナダの三国の貿易協定（United States Mexico Canada Agreement）で2020年に発効。" },
+      { q:"等高線の間隔が広い場合、その地形はどのようなものか？", choices:["急斜面","緩やかな斜面","山頂付近","谷底"], answer:1, exp:"等高線の間隔が広い→傾斜が緩やか（緩傾斜）。間隔が狭い→急斜面。" },
+      { q:"「尾根」の説明として正しいものはどれか？", choices:["等高線が低い方から高い方に向かって曲がっている部分","等高線が高い方から低い方に向かって曲がっている部分","等高線の間隔が最も広い部分","川が流れている低い地形"], answer:1, exp:"尾根は等高線が高い方から低い方に向かって曲がっている（山から張り出した）部分。谷はその逆。" },
+      { q:"MERCOSUR（メルコスール）の説明として正しいものはどれか？", choices:["東南アジアの経済共同体","南アメリカの財・サービス・労働力の自由市場を目指す地域経済統合","アフリカの政治的統合組織","北アメリカの三国貿易協定"], answer:1, exp:"MERCOSURは南アメリカの域内で財・サービス・労働力の自由市場を目指す地域経済統合。アルゼンチン・ブラジルなどが加盟。" }
+    ],
+    flash: [
+      { q:"本初子午線が通るロンドン郊外の場所は？", a:"グリニッジ（旧グリニッジ天文台）", exp:"本初子午線（経度0度）はイギリスのロンドン郊外グリニッジを通る。" },
+      { q:"日付変更線はおよそ何度の経線沿いに引かれているか？", a:"経度180度", exp:"日付変更線は経度180度線に沿って設定。この線を越えると日付が変わる。" },
+      { q:"極夜とはどのような現象か？", a:"冬に太陽が1日中昇らない現象（高緯度地域で起こる）", exp:"高緯度地域の冬に起こる。反対に夏に太陽が沈まない現象を「白夜」という。" },
+      { q:"EPAを日本語で何と言うか？", a:"経済連携協定", exp:"Economic Partnership Agreement。貿易だけでなく人的交流や幅広い経済関係の構築を目的とする。" },
+      { q:"尖閣諸島に対して領有権を主張している国を2つ答えよ。", a:"台湾・中国", exp:"尖閣諸島（魚釣島・南小島・北小島）は1895年に沖縄県に編入。1971年以降、台湾と中国がそれぞれ領有権を主張している。" },
+      { q:"日本の排他的経済水域（EEZ）の広さは世界何位か？", a:"第6位", exp:"島国の日本はEEZが広く世界第6位。豊富な水産資源に恵まれ、メタンハイドレートなど海底資源も眠っている。" },
+      { q:"GATTとは何か（日本語で）？", a:"関税および貿易に関する一般協定", exp:"GATTは自由貿易の障壁となるものを多国間の交渉で取り除くために設立。後にWTOへ発展した。" },
+      { q:"サマータイムとはどのような制度か？", a:"昼が長い夏季に時計を1時間進める制度", exp:"主に季節による日照時間の差が大きくなる高緯度の国々で採用される。" },
+      { q:"竹島を構成する主な島を2つ答えよ。", a:"男島・女島", exp:"竹島（韓国名：独島）は男島・女島を主な構成島とする。1905年に島根県に編入されたが1952年以降韓国が実効支配。" },
+      { q:"CPTPPとは何の略か（日本語）？", a:"環太平洋パートナーシップに関する包括的および先進的な協定", exp:"TPPからアメリカが離脱後、残り11か国で発効。イギリスは2024年に正式加入。" }
+    ]
+  },
+
+  rekishi: {
+    label: '歴史', color: '#ec407a', tagClass: 'tag-rekishi',
+    desc: '江戸時代・市民革命・フランス革命・清・大西洋三角貿易',
+    quiz: [
+      { q:"江戸幕府を開いた人物は誰か？", choices:["豊臣秀吉","徳川家光","徳川家康","織田信長"], answer:2, exp:"徳川家康は1603年に江戸幕府を開いた。征夷大将軍に就任し、幕藩体制を確立した。" },
+      { q:"イギリスの名誉革命（1688〜89年）後に制定された法律はどれか？", choices:["権利の章典","人権宣言","独立宣言","大憲章（マグナカルタ）"], answer:0, exp:"1689年の権利の章典で、議会の承認のない法律の停止は不可とされ、立憲君主制・議会政治が確立された。" },
+      { q:"フランス革命のきっかけとなった1789年7月の民衆蜂起はどれか？", choices:["ボストン茶会事件","バスティーユ牢獄の襲撃","ワーテルローの戦い","テルミドールのクーデタ"], answer:1, exp:"1789年7月14日のバスティーユ牢獄襲撃でフランス革命が本格化。この日はフランス建国記念日（革命記念日）。" },
+      { q:"アメリカ独立宣言（1776年）を主に起草した人物はだれか？", choices:["ジョージ・ワシントン","ベンジャミン・フランクリン","トーマス・ジェファソン","ジョン・アダムズ"], answer:2, exp:"独立宣言はトーマス・ジェファソン・ベンジャミン・フランクリンらによって起草。「自由と平等のための戦い」を戦争の目的とした。" },
+      { q:"清（しん）を建国した民族はどれか？", choices:["漢民族","モンゴル族","満州族（女真族）","チベット族"], answer:2, exp:"清は17世紀に満州族（女真族）が建国。1644年に明王朝を倒し北京を占領し中国支配を確立した。" },
+      { q:"江戸幕府の「四つの口」に含まれないものはどれか？", choices:["長崎（オランダ・清との貿易）","対馬（朝鮮との貿易）","薩摩（琉球との貿易）","横浜（欧米との貿易）"], answer:3, exp:"四つの口は長崎・対馬・薩摩・松前（蝦夷地）の4か所。横浜が開港したのは1859年（開国後）。" },
+      { q:"フランス革命中の1789年8月に発布された「人権宣言」の内容として正しいものはどれか？", choices:["王権の強化と絶対王政の正当化","自由・平等・国民主権・所有権の不可侵","貴族制度の維持と身分制の確認","植民地への課税強化"], answer:1, exp:"人権宣言は自由・平等・国民主権・所有権の不可侵を内容とする。封建制廃止とともに旧来の身分制社会を否定した。" },
+      { q:"大西洋三角貿易の流れとして正しいものはどれか？", choices:["ヨーロッパ→アフリカ（武器・綿織物）→アメリカ大陸（奴隷）→ヨーロッパ（砂糖・綿花）","アフリカ→ヨーロッパ→アジア→アメリカ大陸","アメリカ大陸→ヨーロッパ→アフリカ→アジア","アジア→ヨーロッパ→アフリカ→アメリカ大陸"], answer:0, exp:"三角貿易でアフリカから約1200万人が奴隷としてアメリカに強制移送された。ヨーロッパは砂糖・綿花・コーヒーを輸入。" },
+      { q:"オスマン帝国の首都はどこか？", choices:["メッカ","バグダード","イスタンブール","カイロ"], answer:2, exp:"オスマン帝国の首都はイスタンブール。地中海・黒海・ペルシャ湾を支配し、アジアとヨーロッパを結ぶ交易ルートを掌握した。" },
+      { q:"啓蒙思想家ロックの主な主張はどれか？", choices:["絶対王政を支持した","社会契約説に基づき市民が抵抗権を持つと主張した","三権分立を説いた","直接民主主義を主張した"], answer:1, exp:"ロックは「統治二論」で社会契約説・抵抗権を主張。モンテスキューが「法の精神」で三権分立を、ルソーが「社会契約論」で直接民主主義を説いた。" },
+      { q:"フランス革命でロベスピエールが処刑されたきっかけとなった出来事はどれか？", choices:["バスティーユ牢獄の襲撃","テルミドールのクーデタ","ナポレオンの台頭","人権宣言の発布"], answer:1, exp:"1794年7月のテルミドールのクーデタでロベスピエールが逮捕・処刑された。恐怖政治の終焉。その後1795年に総裁政府が成立。" },
+      { q:"江戸幕府が鎖国中にヨーロッパ諸国の中で唯一貿易を許可した国はどこか？", choices:["スペイン","ポルトガル","イギリス","オランダ"], answer:3, exp:"オランダはキリスト教を布教しないため貿易が許可された。長崎の出島でのみ貿易が実施された。" }
+    ],
+    flash: [
+      { q:"江戸幕府が開かれた年は？", a:"1603年", exp:"徳川家康が1603年に江戸幕府を開き将軍職に就いた。" },
+      { q:"フランス革命のバスティーユ牢獄襲撃は何年か？", a:"1789年", exp:"1789年7月14日。この日はフランス建国記念日となっている。" },
+      { q:"アメリカ独立宣言が発表された年は？", a:"1776年", exp:"1776年7月4日。トーマス・ジェファソンらが起草した。" },
+      { q:"清の全盛期（1735〜1795年）の皇帝は誰か？", a:"乾隆帝", exp:"乾隆帝の時代に清は最大領土を支配し、チベット・新疆まで版図を拡大した。" },
+      { q:"イギリスの名誉革命はいつか？", a:"1688〜89年", exp:"議会がオランダからウィリアム3世・メアリ2世夫妻を招聘しジェームズ2世を追放。翌1689年に権利の章典を制定。" },
+      { q:"フランスの三色旗（トリコロール）の三色は？", a:"青・白・赤", exp:"フランス革命中に制定され現在のフランス国旗として使用されている。" },
+      { q:"江戸時代に儒学で孔子に始まる学問を何と呼ぶか？", a:"儒学（儒教）", exp:"儒学は孔子に始まる政治・道徳の学問。江戸時代に盛んになった。本居宣長は国学、杉田玄白らは蘭学を発展させた。" },
+      { q:"アメリカ独立戦争で植民地軍の総司令官を務め、初代大統領となった人物は？", a:"ジョージ・ワシントン", exp:"ワシントンは独立軍を指揮し、独立後1789年に初代大統領となった。" },
+      { q:"清の行政で科挙（官吏登用試験）で採用された人々を何と呼ぶか？", a:"官僚（士大夫）", exp:"清は皇帝中心の官僚制度を維持し、科挙で官僚を採用した。" },
+      { q:"フランス革命前の身分制度「アンシャン・レジーム」で納税義務を負っていた身分は？", a:"第三身分（平民）", exp:"第一身分（聖職者）・第二身分（貴族）は免税特権を持ち、第三身分（平民）が税負担を負っていた。" }
+    ]
+  },
+
+  seibutsu: {
+    label: '生物', color: '#43a047', tagClass: 'tag-seibutsu',
+    desc: '顕微鏡観察・細胞小器官・ATP・光合成・細胞呼吸',
+    quiz: [
+      { q:"顕微鏡で高倍率にしたときの変化として正しいものはどれか？", choices:["視野が広くなり明るくなる","視野が暗くなり狭くなる","対物レンズが短くなる","焦点深度が深くなる"], answer:1, exp:"高倍率では対物レンズが長くなる。視野は暗く・狭くなり、焦点深度は浅くなる。低倍率から観察を始めるのが基本。" },
+      { q:"顕微鏡観察の手順として最初にすべき操作はどれか？", choices:["最高倍率の対物レンズを選ぶ","しぼりを全開にする","最も低倍率の対物レンズを選ぶ","接眼レンズを外す"], answer:2, exp:"まず低倍率でプレパラート全体を確認し、観察したい部分を中央に移動させた後、高倍率に変えてピントを合わせる。" },
+      { q:"ATPの正式名称として正しいものはどれか？", choices:["アデノシン二リン酸","アデノシン三リン酸","アデノシン一リン酸","グルコース六リン酸"], answer:1, exp:"ATP（アデノシン三リン酸）は細胞のエネルギー通貨。加水分解でADP＋リン酸＋エネルギーが生成される。" },
+      { q:"光合成が行われる細胞小器官はどれか？", choices:["ミトコンドリア","リボソーム","葉緑体","液胞"], answer:2, exp:"葉緑体にはチラコイド（光反応の場）とストロマ（カルビン回路の場）がある。光エネルギーを利用してCO₂と水からグルコースと酸素を合成する。" },
+      { q:"好気呼吸（細胞呼吸）が主に行われる細胞小器官はどれか？", choices:["葉緑体","液胞","ミトコンドリア","細胞壁"], answer:2, exp:"ミトコンドリアはクリステ（内膜のひだ）でATPを大量生産する。好気呼吸でグルコース1分子から最大38のATPが生成される。" },
+      { q:"顕微鏡の倍率を求める式として正しいものはどれか？", choices:["接眼レンズの倍率 ÷ 対物レンズの倍率","対物レンズの倍率 ÷ 接眼レンズの倍率","接眼レンズの倍率 × 対物レンズの倍率","接眼レンズの倍率 + 対物レンズの倍率"], answer:2, exp:"顕微鏡の倍率＝接眼レンズの倍率×対物レンズの倍率。例：接眼10×・対物40×なら400倍。" },
+      { q:"核膜に包まれた核を持つ生物を何と呼ぶか？", choices:["原核生物","真核生物","単細胞生物","多細胞生物"], answer:1, exp:"核膜に包まれた核を持つ生物を真核生物（動物・植物・菌類など）という。核を持たない生物（大腸菌など）を原核生物という。" },
+      { q:"リボソームの主な機能はどれか？", choices:["DNAの複製","タンパク質の合成","細胞内消化","光合成"], answer:1, exp:"リボソームはmRNAの情報をもとにアミノ酸を結合させてタンパク質を合成する場。核のDNA→mRNA（転写）→タンパク質（翻訳）の流れで機能する。" },
+      { q:"光合成の全体反応として正しいものはどれか？", choices:["C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + エネルギー","6CO₂ + 12H₂O → C₆H₁₂O₆ + 6H₂O + 6O₂","6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂","C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂"], answer:1, exp:"光合成の全体式：6CO₂ + 12H₂O →（光エネルギー）→ C₆H₁₂O₆ + 6H₂O + 6O₂。水の分解で酸素が発生し、CO₂がグルコースに固定される。" },
+      { q:"減数分裂と体細胞分裂の説明として正しいものはどれか？", choices:["体細胞分裂では染色体数が半分になる","減数分裂は受精卵の発生に使われる","減数分裂では染色体数が半分になる","体細胞分裂は生殖細胞の形成に使われる"], answer:2, exp:"減数分裂では配偶子（精子・卵）が形成され染色体数が半分（n）になる。体細胞分裂では母細胞と同じ染色体数（2n）を保つ。" },
+      { q:"顕微鏡で反射鏡に平面鏡を使うのは主にどのような場合か？", choices:["高倍率での観察時","低倍率での観察時","暗い場所での観察時","プレパラートが薄い時"], answer:1, exp:"高倍率の観察には凹面鏡（光を集める）、低倍率の観察には平面鏡を使う。高倍率では視野が暗くなるため凹面鏡で光を集める必要がある。" },
+      { q:"細胞呼吸（好気呼吸）の全体反応として正しいものはどれか？", choices:["6CO₂ + 12H₂O → C₆H₁₂O₆ + 6H₂O + 6O₂","C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + エネルギー（ATP）","C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂ + エネルギー","ADP + リン酸 → ATP + H₂O"], answer:1, exp:"好気呼吸：C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + エネルギー（ATP）。グルコースを酸素で完全分解し多量のATPを得る。" }
+    ],
+    flash: [
+      { q:"高倍率にすると視野はどうなるか？", a:"暗く・狭くなる", exp:"高倍率では光の入る範囲が狭くなるため視野は暗くなり、見える範囲も狭くなる。焦点深度も浅くなる。" },
+      { q:"細胞内でATPを主に合成する細胞小器官は？", a:"ミトコンドリア", exp:"ミトコンドリアは有機物を分解してATPを大量生産（好気呼吸）。葉緑体でも光合成の光反応でATPが生産される。" },
+      { q:"光合成の光反応が起こる場所は？", a:"チラコイド（膜）", exp:"チラコイド膜で光エネルギーを使いATPとNADPHを生成。カルビン回路（暗反応）はストロマで行われる。" },
+      { q:"DNAの二重らせん構造を発見した科学者2名は？", a:"ワトソンとクリック", exp:"1953年、ジェームズ・ワトソンとフランシス・クリックがDNA二重らせん構造を解明。ノーベル賞を受賞。" },
+      { q:"細胞壁を持つのは動物細胞・植物細胞のどちらか？", a:"植物細胞（セルロース製）", exp:"動物細胞には細胞壁がなく、植物細胞はセルロースからなる細胞壁を持つ。" },
+      { q:"ミトコンドリアの内膜のひだ状の構造を何と呼ぶか？", a:"クリステ", exp:"クリステはミトコンドリアの内膜がひだ状に突き出た構造で、ATP合成酵素が存在し呼吸に関わる。" },
+      { q:"好気呼吸の反応式（簡略）を答えよ。", a:"C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ATP", exp:"グルコースを酸素で完全分解し、CO₂・水・多量のATPを生成する。嫌気呼吸（発酵）と異なり大量のATPが得られる。" },
+      { q:"接眼ミクロメーター1目盛りの長さを求めるのに使う器具は？", a:"対物ミクロメーター（ステージ上に置く）", exp:"対物ミクロメーター（1目盛り＝0.01mm＝10μm）を使って接眼ミクロメーター1目盛りの長さを算出し、観察対象の長さを測定する。" },
+      { q:"DNAの情報がmRNAに写し取られる過程を何と呼ぶか？", a:"転写", exp:"DNA→mRNA（転写）→タンパク質（翻訳）の流れをセントラルドグマという。転写は核内で行われる。" },
+      { q:"光合成でCO₂が有機物（グルコース）に固定される反応を何と呼ぶか？", a:"カルビン回路（暗反応）", exp:"カルビン回路はストロマで行われ、光反応で生産されたATP・NADPHを使いCO₂をグルコースに固定する。" }
+    ]
+  }
+};
+
+let currentSubject=null, currentMode=null, currentIndex=0, shuffledQ=[];
+let score=0, wrongList=[], flashCorrect=0, flashRevealed=false;
+const stats = JSON.parse(localStorage.getItem('study_stats')||'{}');
+function saveStats(){ localStorage.setItem('study_stats', JSON.stringify(stats)); }
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function openMode(subject){
+  currentSubject=subject;
+  const d=DB[subject];
+  document.getElementById('modeSubjectLabel').innerHTML=`<span class="tag tag-${subject}">${d.label}</span> 学習モードを選択`;
+  document.getElementById('modeDesc').textContent=d.desc;
+  const s=stats[subject]||{};
+  document.getElementById('statBest').textContent=s.quizBest!=null?`${s.quizBest}/${d.quiz.length} 問`:'—';
+  document.getElementById('statFlash').textContent=s.flashRate!=null?`${s.flashRate}%`:'—';
+  showScreen('modeSelect');
+}
+
+function startQuiz(){
+  currentMode='quiz';
+  const d=DB[currentSubject];
+  shuffledQ=shuffle([...d.quiz]);
+  currentIndex=0; score=0; wrongList=[];
+  document.getElementById('quizProgressLabel').textContent=`${d.label} 4択クイズ`;
+  document.getElementById('quizProgressFill').style.background=`linear-gradient(90deg,${d.color},#ce93d8)`;
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const d=DB[currentSubject], total=shuffledQ.length, q=shuffledQ[currentIndex];
+  document.getElementById('quizCount').textContent=`${currentIndex+1} / ${total}`;
+  document.getElementById('quizProgressFill').style.width=`${(currentIndex/total)*100}%`;
+  document.getElementById('questionNum').innerHTML=`<span class="tag tag-${currentSubject}">${d.label}</span> 問 ${currentIndex+1}`;
+  document.getElementById('questionText').textContent=q.q;
+  const sc=shuffleWithIndex(q.choices);
+  const ci=sc.findIndex(c=>c.origIdx===q.answer);
+  const choicesEl=document.getElementById('choices');
+  choicesEl.innerHTML='';
+  sc.forEach((c,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent=`${'①②③④'[i]} ${c.text}`;
+    btn.dataset.correct=(i===ci)?'1':'0';
+    btn.onclick=()=>selectChoice(btn,ci,q);
+    choicesEl.appendChild(btn);
+  });
+  const exp=document.getElementById('explanationBox');
+  exp.textContent=''; exp.classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+}
+
+function selectChoice(btn,correctIdx,q){
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.correct==='1') b.classList.add('show-correct');
+  });
+  if(btn.dataset.correct==='1'){ btn.classList.add('correct'); score++; }
+  else{ btn.classList.add('wrong'); wrongList.push(q); }
+  const exp=document.getElementById('explanationBox');
+  exp.textContent=`💡 解説：${q.exp}`; exp.classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function nextQuestion(){
+  currentIndex++;
+  if(currentIndex>=shuffledQ.length) showQuizResult();
+  else renderQuestion();
+}
+
+function showQuizResult(){
+  const d=DB[currentSubject], total=shuffledQ.length, pct=Math.round(score/total*100);
+  if(!stats[currentSubject]) stats[currentSubject]={};
+  if(stats[currentSubject].quizBest==null||score>stats[currentSubject].quizBest){ stats[currentSubject].quizBest=score; saveStats(); }
+  let emoji='😓',msg='もう一度復習しよう！';
+  if(pct>=90){emoji='🎉';msg='完璧！すごい！';}
+  else if(pct>=70){emoji='🌸';msg='よくできました！';}
+  else if(pct>=50){emoji='🤔';msg='もう少し！';}
+  document.getElementById('resultEmoji').textContent=emoji;
+  document.getElementById('resultScore').textContent=`${score} / ${total}`;
+  document.getElementById('resultLabel').textContent=`正答率 ${pct}%　${msg}`;
+  document.getElementById('resultBars').innerHTML=`
+    <div class="result-bar-row"><label>正解</label><div class="result-bar-bg"><div class="result-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${d.color},#ce93d8)"></div></div><span class="val">${score}</span></div>
+    <div class="result-bar-row"><label>不正解</label><div class="result-bar-bg"><div class="result-bar-fill" style="width:${100-pct}%;background:#ef9a9a"></div></div><span class="val">${total-score}</span></div>`;
+  const rv=document.getElementById('reviewList');
+  rv.innerHTML=wrongList.length>0?`<p style="font-size:.83rem;color:#c2739a;margin-bottom:8px;">📌 間違えた問題</p>`:'<p style="font-size:.83rem;color:#43a047;text-align:center;margin-top:8px;">🎊 全問正解！完璧！</p>';
+  wrongList.forEach(q=>{ const el=document.createElement('div'); el.className='review-item'; el.innerHTML=`<div class="ri-q">${q.q}</div><div class="ri-a">正解：${q.choices[q.answer]}</div>`; rv.appendChild(el); });
+  showScreen('result');
+}
+
+function startFlash(){
+  currentMode='flash';
+  const d=DB[currentSubject];
+  shuffledQ=shuffle([...d.flash]);
+  currentIndex=0; flashCorrect=0; wrongList=[];
+  document.getElementById('flashProgressLabel').textContent=`${d.label} 一問一答`;
+  document.getElementById('flashProgressFill').style.background=`linear-gradient(90deg,${d.color},#ce93d8)`;
+  showScreen('flash');
+  renderFlash();
+}
+
+function renderFlash(){
+  const d=DB[currentSubject], total=shuffledQ.length, q=shuffledQ[currentIndex];
+  flashRevealed=false;
+  document.getElementById('flashCount').textContent=`${currentIndex+1} / ${total}`;
+  document.getElementById('flashProgressFill').style.width=`${(currentIndex/total)*100}%`;
+  document.getElementById('flashLabel').textContent='❓ 問題';
+  document.getElementById('flashLabel').style.color=d.color;
+  document.getElementById('flashQ').textContent=q.q;
+  document.getElementById('flashA').style.display='none';
+  document.getElementById('flashExp').style.display='none';
+  document.getElementById('flashA').textContent=q.a;
+  document.getElementById('flashExp').textContent=`💡 ${q.exp}`;
+  document.getElementById('flashTap').style.display='block';
+  document.getElementById('flashActions').classList.remove('show');
+  document.getElementById('flashCard').style.borderColor='#fce4ec';
+}
+
+function revealFlash(){
+  if(flashRevealed) return;
+  flashRevealed=true;
+  const d=DB[currentSubject];
+  document.getElementById('flashLabel').textContent='✅ 答え';
+  document.getElementById('flashA').style.display='block';
+  document.getElementById('flashExp').style.display='block';
+  document.getElementById('flashTap').style.display='none';
+  document.getElementById('flashActions').classList.add('show');
+  document.getElementById('flashCard').style.borderColor=d.color;
+}
+
+function flashAnswer(correct){
+  if(correct) flashCorrect++;
+  else wrongList.push(shuffledQ[currentIndex]);
+  currentIndex++;
+  if(currentIndex>=shuffledQ.length) showFlashResult();
+  else renderFlash();
+}
+
+function showFlashResult(){
+  const d=DB[currentSubject], total=shuffledQ.length, pct=Math.round(flashCorrect/total*100);
+  if(!stats[currentSubject]) stats[currentSubject]={};
+  stats[currentSubject].flashRate=pct; saveStats();
+  let emoji='😓',msg='もう一度復習しよう！';
+  if(pct>=90){emoji='🎉';msg='完璧！すごい！';}
+  else if(pct>=70){emoji='🌸';msg='よくできました！';}
+  else if(pct>=50){emoji='🤔';msg='もう少し！';}
+  document.getElementById('resultEmoji').textContent=emoji;
+  document.getElementById('resultScore').textContent=`${flashCorrect} / ${total}`;
+  document.getElementById('resultLabel').textContent=`正答率 ${pct}%　${msg}`;
+  document.getElementById('resultBars').innerHTML=`
+    <div class="result-bar-row"><label>正解</label><div class="result-bar-bg"><div class="result-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${d.color},#ce93d8)"></div></div><span class="val">${flashCorrect}</span></div>
+    <div class="result-bar-row"><label>不正解</label><div class="result-bar-bg"><div class="result-bar-fill" style="width:${100-pct}%;background:#ef9a9a"></div></div><span class="val">${total-flashCorrect}</span></div>`;
+  const rv=document.getElementById('reviewList');
+  rv.innerHTML=wrongList.length>0?`<p style="font-size:.83rem;color:#c2739a;margin-bottom:8px;">📌 間違えた問題</p>`:'<p style="font-size:.83rem;color:#43a047;text-align:center;margin-top:8px;">🎊 全問正解！完璧！</p>';
+  wrongList.forEach(q=>{ const el=document.createElement('div'); el.className='review-item'; el.innerHTML=`<div class="ri-q">${q.q}</div><div class="ri-a">正解：${q.a}</div>`; rv.appendChild(el); });
+  showScreen('result');
+}
+
+function retry(){ if(currentMode==='quiz') startQuiz(); else startFlash(); }
+function confirmBack(){ if(confirm('途中ですが戻りますか？')) showScreen('modeSelect'); }
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function shuffleWithIndex(arr){
+  return shuffle(arr.map((text,origIdx)=>({text,origIdx})));
+}
+</script>
+</body>
+</html>
